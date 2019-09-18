@@ -3,24 +3,31 @@ import edu.princeton.cs.algs4.StdRandom;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class RandomizedQueue<T> implements Iterable<T> {
-    private T[] items;
+public class RandomizedQueue<Item> implements Iterable<Item> {
+    private Item[] items;
     private int size;
     private int next;
 
     public RandomizedQueue() {
         size = 0;
-        items = (T[]) new Object[8];
+        items = (Item[]) new Object[8];
         next = 0;
     }
 
+    private RandomizedQueue(RandomizedQueue<Item> other) {
+        size = other.size;
+        items = (Item[]) new Object[other.items.length];
+        System.arraycopy(other.items, 0, items, 0, items.length);
+        next = other.next;
+    }
+
     private void resize(int capacity) {
-        T[] resized = (T[]) new Object[capacity];
+        Item[] resized = (Item[]) new Object[capacity];
         System.arraycopy(items, 0, resized, 0, size);
         items = resized;
     }
 
-    public void enqueue(T item) {
+    public void enqueue(Item item) {
         if (item == null) {
             throw new IllegalArgumentException("null can't be added to deque");
         }
@@ -40,25 +47,24 @@ public class RandomizedQueue<T> implements Iterable<T> {
         return size == 0;
     }
 
-    public T dequeue() {
+    public Item dequeue() {
         if (isEmpty()) {
             throw new NoSuchElementException("Deque is empty");
         }
         int randomIndex = StdRandom.uniform(size);
-        T item = items[randomIndex];
-        int tail = size - randomIndex - 1;
-        System.arraycopy(items, randomIndex + 1, items, randomIndex, tail);
+        Item item = items[randomIndex];
         next -= 1;
+        items[randomIndex] = items[next];
         items[next] = null;
         size -= 1;
 
-        if (((float) size / items.length) < 0.25 && items.length >= 16) {
+        if (((double) size / items.length) < 0.25 && items.length >= 16) {
             resize(items.length / 2);
         }
         return item;
     }
 
-    public T sample() {
+    public Item sample() {
         if (isEmpty()) {
             throw new NoSuchElementException("Deque is empty");
         }
@@ -66,33 +72,30 @@ public class RandomizedQueue<T> implements Iterable<T> {
         return items[randomIndex];
     }
 
+
     @Override
-    public Iterator<T> iterator() {
-        return new RQIterator<>(this);
+    public Iterator<Item> iterator() {
+        return new RQIterator(this);
     }
 
-    private class RQIterator<T> implements Iterator<T> {
-        private int index;
-        private RandomizedQueue<T> rq;
+    private class RQIterator implements Iterator<Item> {
+        private RandomizedQueue<Item> rqCopy;
 
-        RQIterator(RandomizedQueue<T> rq) {
-            index = 0;
-            this.rq = rq;
+        RQIterator(RandomizedQueue<Item> rq) {
+            rqCopy = new RandomizedQueue<>(rq);
         }
 
         @Override
         public boolean hasNext() {
-            return index < rq.size();
+            return rqCopy.size > 0;
         }
 
         @Override
-        public T next() {
+        public Item next() {
             if (!hasNext()) {
                 throw new NoSuchElementException("There are no next items.");
             }
-            T item = rq.items[index];
-            index += 1;
-            return item;
+            return rqCopy.dequeue();
         }
 
         @Override
@@ -122,10 +125,11 @@ public class RandomizedQueue<T> implements Iterable<T> {
             System.out.printf("sample %d: %d\n", i, rq.sample());
         }
         Iterator<Integer> rqIterator = rq.iterator();
+        Iterator<Integer> rqIterator2 = rq.iterator();
         for (int i = 0; i < 10; i++) {
             System.out.printf("item %d: %d\n", i, rqIterator.next());
+            System.out.printf("item2 %d: %d\n", i, rqIterator2.next());
         }
-        System.out.printf("size: %d\n", rq.size());
         for (int i = 0; i < 10; i++) {
             System.out.printf("removed item: %d\n", rq.dequeue());
             rq.printDeque();
