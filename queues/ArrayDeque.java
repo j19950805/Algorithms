@@ -16,20 +16,12 @@ public class ArrayDeque<Item> implements Iterable<Item> {
 
     private void resize(int capacity) {
         Item[] resized = (Item[]) new Object[capacity];
-        int initFirst = arrayAdd(nextFirst, 1);
-        if (nextLast <= nextFirst) {
-            int tailLength = items.length - nextFirst - 1;
-            int newFirst = (capacity - tailLength) % capacity;
-            System.arraycopy(items, 0, resized, 0, nextLast);
-            System.arraycopy(items, initFirst, resized, newFirst, tailLength);
-            items = resized;
-            nextFirst = arrayAdd(newFirst, -1);
-        } else {
-            System.arraycopy(items, initFirst, resized, 4, size);
-            items = resized;
-            nextFirst = 3;
-            nextLast = size + 4;
+        for (int i = 1; i <= size; i++) {
+            resized[i] = items[arrayAdd(nextFirst, i)];
         }
+        items = resized;
+        nextFirst = 0;
+        nextLast = size + 1;
     }
 
     private int arrayAdd(int index, int addend) {
