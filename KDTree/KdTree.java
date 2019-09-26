@@ -146,7 +146,8 @@ public class KdTree {
     }
 
     private Point2D nearest(Point2D goal, Point2D res, double minDist, RectHV rect, Node x, Comparator<Point2D> c) {
-        if (x == null || goal.equals(res)) {
+        if (x == null || goal.equals(res) || rect.distanceSquaredTo(goal) > minDist)
+        {
             return res;
         }
 
@@ -179,9 +180,7 @@ public class KdTree {
 
         res = nearest(goal, res, minDist, goodRect, goodSide, changeComparator(c));
         minDist = goal.distanceSquaredTo(res);
-        if (rect.distanceSquaredTo(goal) < minDist) {
-            res = nearest(goal, res, minDist, badRect, badSide, changeComparator(c));
-        }
+        res = nearest(goal, res, minDist, badRect, badSide, changeComparator(c));
         return res;
     }
 
