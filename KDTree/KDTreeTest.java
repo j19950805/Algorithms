@@ -15,8 +15,8 @@ public class KDTreeTest {
     @Test
     public void TestKDTree() {
         List<Point2D> samplePoint2Ds = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            samplePoint2Ds.add(new Point2D(StdRandom.uniform(-1000,1000), StdRandom.uniform(-1000, 1000)));
+        for (int i = 0; i < 10000; i++) {
+            samplePoint2Ds.add(new Point2D(StdRandom.uniform(), StdRandom.uniform()));
         }
 
         KdTree kdt = new KdTree();
@@ -33,9 +33,9 @@ public class KDTreeTest {
         assertEquals(kdt.size(), ps.size());
 
         boolean testContains = false;
-        for (int i = 0; i < 1000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             boolean c1 = kdt.contains(new Point2D(x, y));
             boolean c2 = ps.contains(new Point2D(x, y));
             testContains = c1 == c2;
@@ -43,19 +43,19 @@ public class KDTreeTest {
         assertTrue(testContains);
 
         boolean testNearest = false;
-        for (int i = 0; i < 1000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             Point2D n1 = kdt.nearest(new Point2D(x, y));
             Point2D n2 = ps.nearest(new Point2D(x, y));
             testNearest = n1.equals(n2);
         }
         assertTrue(testNearest);
 
-        double x1 = StdRandom.uniform(-1000.0, 1000.0);
-        double x2 = StdRandom.uniform(-1000.0, 1000.0);
-        double y1 = StdRandom.uniform(-1000.0, 1000.0);
-        double y2 = StdRandom.uniform(-1000.0, 1000.0);
+        double x1 = StdRandom.uniform();
+        double x2 = StdRandom.uniform();
+        double y1 = StdRandom.uniform();
+        double y2 = StdRandom.uniform();
         RectHV rect = new RectHV(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2));
         Iterable<Point2D> r1 = kdt.range(rect);
         Iterable<Point2D> r2 = ps.range(rect);
@@ -72,8 +72,8 @@ public class KDTreeTest {
 
     public static void main(String[] args) {
         List<Point2D> samplePoint2Ds = new ArrayList<>();
-        for (int i = 0; i < 1000000; i++) {
-            samplePoint2Ds.add(new Point2D(StdRandom.uniform(-1000,1000), StdRandom.uniform(-1000, 1000)));
+        for (int i = 0; i < 100000; i++) {
+            samplePoint2Ds.add(new Point2D(StdRandom.uniform(), StdRandom.uniform()));
         }
 
         long start = System.currentTimeMillis();
@@ -90,12 +90,12 @@ public class KDTreeTest {
             ps.insert(p);
         }
         end = System.currentTimeMillis();
-        System.out.println("Total time elapsed(TreeSetInsertion): " + (end - start)/1000.0 +  " seconds.");
+        System.out.println("Total time elapsed(PointSetInsertion): " + (end - start)/1000.0 +  " seconds.");
 
         start = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             kdt.contains(new Point2D(x, y));
         }
         end = System.currentTimeMillis();
@@ -103,37 +103,37 @@ public class KDTreeTest {
 
         start = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             ps.contains(new Point2D(x, y));
         }
         end = System.currentTimeMillis();
         System.out.println("Total time elapsed(PointSet.contains): " + (end - start)/1000.0 +  " seconds.");
 
         start = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             kdt.nearest(new Point2D(x, y));
         }
         end = System.currentTimeMillis();
         System.out.println("Total time elapsed(KDTree.nearest): " + (end - start)/1000.0 +  " seconds.");
 
         start = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            double x = StdRandom.uniform(-1000.0, 1000.0);
-            double y = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x = StdRandom.uniform();
+            double y = StdRandom.uniform();
             ps.nearest(new Point2D(x, y));
         }
         end = System.currentTimeMillis();
         System.out.println("Total time elapsed(PointSet.nearest): " + (end - start)/1000.0 +  " seconds.");
 
         start = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            double x1 = StdRandom.uniform(-1000.0, 1000.0);
-            double x2 = StdRandom.uniform(-1000.0, 1000.0);
-            double y1 = StdRandom.uniform(-1000.0, 1000.0);
-            double y2 = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x1 = StdRandom.uniform();
+            double x2 = StdRandom.uniform();
+            double y1 = StdRandom.uniform();
+            double y2 = StdRandom.uniform();
             RectHV rect = new RectHV(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2));
             kdt.range(rect);
         }
@@ -141,11 +141,11 @@ public class KDTreeTest {
         System.out.println("Total time elapsed(KDTree.range): " + (end - start)/1000.0 +  " seconds.");
 
         start = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            double x1 = StdRandom.uniform(-1000.0, 1000.0);
-            double x2 = StdRandom.uniform(-1000.0, 1000.0);
-            double y1 = StdRandom.uniform(-1000.0, 1000.0);
-            double y2 = StdRandom.uniform(-1000.0, 1000.0);
+        for (int i = 0; i < 10000; i++) {
+            double x1 = StdRandom.uniform();
+            double x2 = StdRandom.uniform();
+            double y1 = StdRandom.uniform();
+            double y2 = StdRandom.uniform();
             RectHV rect = new RectHV(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2));
             ps.range(rect);
         }
