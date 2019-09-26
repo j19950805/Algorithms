@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+
 public class KdTree {
+    private static final Comparator<Point2D> XComparator = Comparator.comparingDouble(Point2D::x);
+    private static final Comparator<Point2D> YComparator = Comparator.comparingDouble(Point2D::y);
+
     private Node root;
 
     public KdTree() {
@@ -27,7 +31,7 @@ public class KdTree {
         if (p == null) {
             throw new IllegalArgumentException();
         }
-        return contains(p, root, xComparator);
+        return contains(p, root, XComparator);
     }
 
     private boolean contains(Point2D p, Node x, Comparator<Point2D> c) {
@@ -48,7 +52,7 @@ public class KdTree {
         if (p == null) {
             throw new IllegalArgumentException();
         }
-        root = insert(p, root, xComparator);
+        root = insert(p, root, XComparator);
     }
 
     private Node insert(Point2D p, Node x, Comparator<Point2D> c) {
@@ -86,7 +90,7 @@ public class KdTree {
         draw(root);
     }
 
-    public void draw(Node x) {
+    private void draw(Node x) {
         if (x == null) {
             return;
         }
@@ -100,7 +104,7 @@ public class KdTree {
             throw new IllegalArgumentException();
         }
         List<Point2D> res = new ArrayList<>();
-        range(rect, root, res, xComparator);
+        range(rect, root, res, XComparator);
         return res;
     }
 
@@ -111,7 +115,7 @@ public class KdTree {
         if (rect.contains(x.point)) {
             res.add(x.point);
         }
-        if (c == xComparator) {
+        if (c == XComparator) {
             if (rect.xmin() < x.point.x()) {
                 range(rect, x.left, res, changeComparator(c));
             }
@@ -137,10 +141,11 @@ public class KdTree {
         }
         Point2D res = root.point;
         double minDist = p.distanceSquaredTo(res);
-        return nearest(p, res, minDist, root, xComparator);
+        RectHV rect = new RectHV(0, 0, 1, 1);
+        return nearest(p, res, minDist, rect, root, XComparator);
     }
 
-    private Point2D nearest(Point2D goal, Point2D res, double minDist, Node x, Comparator<Point2D> c) {
+    private Point2D nearest(Point2D goal, Point2D res, double minDist, RectHV rect, Node x, Comparator<Point2D> c) {
         if (x == null || goal.equals(res)) {
             return res;
         }
@@ -152,41 +157,40 @@ public class KdTree {
         }
 
         Node goodSide, badSide;
+        RectHV goodRect, badRect;
+        if (c == XComparator) {
+            badRect = new RectHV(x.point.x(), rect.ymin(), rect.xmax(), rect.ymax());
+            goodRect = new RectHV(rect.xmin(), rect.ymin(), x.point.x(), rect.ymax());
+        } else {
+            badRect = new RectHV(rect.xmin(), x.point.y(), rect.xmax(), rect.ymax());
+            goodRect = new RectHV(rect.xmin(), rect.ymin(), rect.xmax(), x.point.y());
+        }
+
         if (c.compare(goal, x.point) < 0) {
             goodSide = x.left;
             badSide = x.right;
         } else {
             goodSide = x.right;
             badSide = x.left;
+            RectHV temp = goodRect;
+            goodRect = badRect;
+            badRect = temp;
         }
-        res = nearest(goal, res, minDist, goodSide, changeComparator(c));
+
+        res = nearest(goal, res, minDist, goodRect, goodSide, changeComparator(c));
         minDist = goal.distanceSquaredTo(res);
-        if (directionMinDist(goal, x.point, c) < minDist) {
-            res = nearest(goal, res, minDist, badSide, changeComparator(c));
+        if (rect.distanceSquaredTo(goal) < minDist) {
+            res = nearest(goal, res, minDist, badRect, badSide, changeComparator(c));
         }
         return res;
     }
 
-    private Comparator<Point2D> xComparator = Comparator.comparingDouble(Point2D::x);
-
-    private Comparator<Point2D> yComparator = Comparator.comparingDouble(Point2D::y);
-
-    private double directionMinDist(Point2D goal, Point2D nodePoint2D, Comparator<Point2D> c) {
-        if (c == xComparator) {
-            return Math.pow(goal.x() - nodePoint2D.x(), 2);
-        } else {
-            return Math.pow(goal.y() - nodePoint2D.y(), 2);
-        }
-    }
-
     private Comparator<Point2D> changeComparator(Comparator<Point2D> c) {
-        if (c == xComparator) {
-            return yComparator;
+        if (c == XComparator) {
+            return YComparator;
         } else {
-            return xComparator;
+            return XComparator;
         }
     }
 
-    public static void main(String[] args) {
-    }
 }
