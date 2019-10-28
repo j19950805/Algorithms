@@ -1,9 +1,9 @@
-import java.awt.Color;
 import edu.princeton.cs.algs4.Picture;
 
 
 public class SeamCarver {
     private Picture picture;
+    private double[][] energy;
     private int width;
     private int height;
 
@@ -15,10 +15,26 @@ public class SeamCarver {
         this.picture = new Picture(picture);
         width = picture.width();
         height = picture.height();
+        energy = new double[width][height];
+        for (int w = 0; w < width; w++) {
+            for (int h = 0; h < height; h++) {
+                energy[w][h] = energy(w, h);
+            }
+        }
     }
 
     // current picture
     public Picture picture() {
+        Picture pictureNow = new Picture(width, height);  // resize picture
+        double[][] energyNow = new double[width][height]; // resize energy cache
+        for (int w = 0; w < width; w++) {
+            System.arraycopy(energy[w], 0, energyNow[w], 0, height);
+            for (int h = 0; h < height; h++) {
+                pictureNow.setRGB(w, h, picture.getRGB(w, h));
+            }
+        }
+        picture = pictureNow;
+        energy = energyNow;
         return new Picture(picture);
     }
 
@@ -38,18 +54,18 @@ public class SeamCarver {
         if (isBoundary(x, y)) {
             return 1000;
         }
-        Color left = picture.get(x - 1, y);
-        Color right = picture.get(x + 1, y);
-        Color upper = picture.get(x, y + 1);
-        Color lower = picture.get(x, y - 1);
-        double energy = 0;
-        energy += Math.pow(left.getRed() - right.getRed(), 2);
-        energy += Math.pow(left.getGreen() - right.getGreen(), 2);
-        energy += Math.pow(left.getBlue() - right.getBlue(), 2);
-        energy += Math.pow(lower.getRed() - upper.getRed(), 2);
-        energy += Math.pow(lower.getGreen() - upper.getGreen(), 2);
-        energy += Math.pow(lower.getBlue() - upper.getBlue(), 2);
-        return Math.sqrt(energy);
+        int left = picture.get(x - 1, y).getRGB();
+        int right = picture.get(x + 1, y).getRGB();
+        int upper = picture.get(x, y + 1).getRGB();
+        int lower = picture.get(x, y - 1).getRGB();
+        double e = 0;
+        e += Math.pow((left >> 16 & 0xFF) - (right >> 16 & 0xFF), 2);  // red
+        e += Math.pow((left >> 8 & 0xFF) - (right >> 8 & 0xFF), 2);    // green
+        e += Math.pow((left & 0xFF) - (right & 0xFF), 2);              // blue
+        e += Math.pow((lower >> 16 & 0xFF) - (upper >> 16 & 0xFF), 2);
+        e += Math.pow((lower >> 8 & 0xFF) - (upper >> 8 & 0xFF), 2);
+        e += Math.pow((lower & 0xFF) - (upper & 0xFF), 2);
+        return Math.sqrt(e);
     }
 
 
@@ -57,6 +73,7 @@ public class SeamCarver {
         return x == 0 || x == width - 1 || y == 0 || y == height - 1;
     }
 
+    // throw an IllegalArgumentException for invalid pixel index
     private void validPixel(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) {
             throw new IllegalArgumentException("Invalid pixel indices.");
@@ -108,7 +125,7 @@ public class SeamCarver {
     // relax next possible pixel along the horizontal seam (upper right /right /lower right)
     private void relaxHorizontal(int w, int h, double[][] energyTo, int[][] prevHeightIndex) {
         for (int i = -1; i <= 1; i++) {
-            double energyToNextPixel = energyTo[w][h] + energy(w + 1, h + i);
+            double energyToNextPixel = energyTo[w][h] + energy[w + 1][h + i];
             if (energyTo[w + 1][h + i] > energyToNextPixel) {
                 energyTo[w + 1][h + i] = energyToNextPixel;
                 prevHeightIndex[w + 1][h + i] = h;
@@ -161,7 +178,7 @@ public class SeamCarver {
     // relax next possible pixel along the vertical seam (lower left /lower /lower right)
     private void relaxVertical(int w, int h, double[][] energyTo, int[][] prevWidthIndex) {
         for (int i = -1; i <= 1; i++) {
-            double energyToNextPixel = energyTo[w][h] + energy(w + i, h + 1);
+            double energyToNextPixel = energyTo[w][h] + energy[w + i][h + 1];
             if (energyTo[w + i][h + 1] > energyToNextPixel) {
                 energyTo[w + i][h + 1] = energyToNextPixel;
                 prevWidthIndex[w + i][h + 1] = w;
@@ -173,35 +190,42 @@ public class SeamCarver {
     // remove horizontal seam from current picture
     public void removeHorizontalSeam(int[] seam) {
         validSeam(seam, width, height);
-        Picture carved = new Picture(width, height - 1);
+        height--;
         for (int w = 0; w < width; w++) {
-            for (int h = 0; h < seam[w]; h++) {
-                carved.set(w, h, picture.get(w, h));
+            for (int h = seam[w]; h < height; h++) {
+                picture.setRGB(w, h, picture.getRGB(w, h + 1));
+                energy[w][h] = energy[w][h + 1];
             }
-            for (int h = seam[w]; h < height() - 1; h++) {
-                carved.set(w, h, picture.get(w, h + 1));
+            // recalculate energy of pixels along the seam
+            if (seam[w] > 0) {
+                energy[w][seam[w] - 1] = energy(w, seam[w] - 1);
+            }
+            if (seam[w] < height) {
+                energy[w][seam[w]] = energy(w, seam[w]);
             }
         }
-        picture = carved;
-        height--;
     }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
         validSeam(seam, height, width);
-        Picture carved = new Picture(width - 1, height);
+        width--;
         for (int h = 0; h < height; h++) {
-            for (int w = 0; w < seam[h]; w++) {
-                carved.set(w, h, picture.get(w, h));
+            for (int w = seam[h]; w < width; w++) {
+                picture.setRGB(w, h, picture.getRGB(w + 1, h));
+                energy[w][h] = energy[w + 1][h];
             }
-            for (int w = seam[h]; w < width() - 1; w++) {
-                carved.set(w, h, picture.get(w + 1, h));
+            // recalculate energy of pixels along the seam
+            if (seam[h] > 0) {
+                energy[seam[h] - 1][h] = energy(seam[h] - 1, h);
+            }
+            if (seam[h] < width) {
+                energy[seam[h]][h] = energy(seam[h], h);
             }
         }
-        picture = carved;
-        width--;
     }
 
+    // throw an IllegalArgumentException for invalid seam
     private void validSeam(int[] seam, int length, int range) {
         if (seam == null || seam.length != length || range <= 1) {
             throw new IllegalArgumentException("Invalid seam.");
