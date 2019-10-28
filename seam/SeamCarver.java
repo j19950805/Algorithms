@@ -16,9 +16,9 @@ public class SeamCarver {
         width = picture.width();
         height = picture.height();
         energy = new double[width][height];
-        for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-                energy[w][h] = energy(w, h);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                energy[x][y] = energy(x, y);
             }
         }
     }
@@ -27,10 +27,10 @@ public class SeamCarver {
     public Picture picture() {
         Picture pictureNow = new Picture(width, height);  // resize picture
         double[][] energyNow = new double[width][height]; // resize energy cache
-        for (int w = 0; w < width; w++) {
-            System.arraycopy(energy[w], 0, energyNow[w], 0, height);
-            for (int h = 0; h < height; h++) {
-                pictureNow.setRGB(w, h, picture.getRGB(w, h));
+        for (int x = 0; x < width; x++) {
+            System.arraycopy(energy[x], 0, energyNow[x], 0, height);
+            for (int y = 0; y < height; y++) {
+                pictureNow.setRGB(x, y, picture.getRGB(x, y));
             }
         }
         picture = pictureNow;
@@ -84,51 +84,51 @@ public class SeamCarver {
     public int[] findHorizontalSeam() {
         // record the sum of energy along possible seams from left boundary to the pixel so far.
         double[][] energyTo = new double[width][height];
-        // record the left pixel's height index along possible seams
-        int[][] prevHeightIndex = new int[width][height];
-        for (int h = 0; h < height; h++) {
-            energyTo[0][h] = 1000;  // energyTo of leftmost pixels = 1000
+        // record the left pixel's row index along possible seams
+        int[][] prevRowIndex = new int[width][height];
+        for (int y = 0; y < height; y++) {
+            energyTo[0][y] = 1000;  // energyTo of leftmost pixels = 1000
         }
-        for (int w = 1; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-                energyTo[w][h] = Double.POSITIVE_INFINITY;
+        for (int x = 1; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                energyTo[x][y] = Double.POSITIVE_INFINITY;
             }
         }
 
-        for (int w = 0; w < width - 1; w++) {
+        for (int x = 0; x < width - 1; x++) {
             // relax pixels of next (right) column until one step before right boundary
-            for (int h = 1; h < height - 1; h++) {
+            for (int y = 1; y < height - 1; y++) {
                 // skip relax(for next step) of top & bottom boundary pixels
-                relaxHorizontal(w, h, energyTo, prevHeightIndex);
+                relaxHorizontal(x, y, energyTo, prevRowIndex);
             }
         }
 
-        // Find the height index of the seam on right boundary
+        // Find the row index of the seam on right boundary
         double minSeamEnergy = Double.POSITIVE_INFINITY;
-        int heightIndex = 0;
-        for (int h = 1; h < height - 1; h++) {
-            if (energyTo[width - 1][h] < minSeamEnergy) {
-                minSeamEnergy = energyTo[width - 1][h];
-                heightIndex = h;
+        int rowIndex = 0;
+        for (int y = 1; y < height - 1; y++) {
+            if (energyTo[width - 1][y] < minSeamEnergy) {
+                minSeamEnergy = energyTo[width - 1][y];
+                rowIndex = y;
             }
         }
 
-        // Find the height indexes along the seam from right to left
+        // Find the row indexes along the seam from right to left
         int[] horizontalSeam = new int[width];
-        for (int w = width -1; w >= 0; w--) {
-            horizontalSeam[w] = heightIndex;
-            heightIndex = prevHeightIndex[w][heightIndex];
+        for (int x = width - 1; x >= 0; x--) {
+            horizontalSeam[x] = rowIndex;
+            rowIndex = prevRowIndex[x][rowIndex];
         }
         return horizontalSeam;
     }
 
     // relax next possible pixel along the horizontal seam (upper right /right /lower right)
-    private void relaxHorizontal(int w, int h, double[][] energyTo, int[][] prevHeightIndex) {
+    private void relaxHorizontal(int x, int y, double[][] energyTo, int[][] prevRowIndex) {
         for (int i = -1; i <= 1; i++) {
-            double energyToNextPixel = energyTo[w][h] + energy[w + 1][h + i];
-            if (energyTo[w + 1][h + i] > energyToNextPixel) {
-                energyTo[w + 1][h + i] = energyToNextPixel;
-                prevHeightIndex[w + 1][h + i] = h;
+            double energyToNextPixel = energyTo[x][y] + energy[x + 1][y + i];
+            if (energyTo[x + 1][y + i] > energyToNextPixel) {
+                energyTo[x + 1][y + i] = energyToNextPixel;
+                prevRowIndex[x + 1][y + i] = y;
             }
         }
     }
@@ -139,49 +139,49 @@ public class SeamCarver {
         // record the sum of energy along possible seams from top boundary to the pixel so far
         double[][] energyTo = new double[width][height];
         // record the upper pixel's width index along possible seams
-        int[][] prevWidthIndex = new int[width][height];
-        for (int w = 0; w < width; w++) {
-            energyTo[w][0] = 1000; // energyTo of topmost pixels = 1000
+        int[][] prevColIndex = new int[width][height];
+        for (int x = 0; x < width; x++) {
+            energyTo[x][0] = 1000; // energyTo of topmost pixels = 1000
         }
-        for (int h = 1; h < height; h++) {
-            for (int w = 0; w < width; w++) {
-                energyTo[w][h] = Double.POSITIVE_INFINITY;
+        for (int y = 1; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                energyTo[x][y] = Double.POSITIVE_INFINITY;
             }
         }
-        for (int h = 0; h < height - 1; h++) {
+        for (int y = 0; y < height - 1; y++) {
             // relax pixels of next (lower) row until one step before bottom boundary
-            for (int w = 1; w < width - 1; w++) {
+            for (int x = 1; x < width - 1; x++) {
                 // skip relax(for next step) of left & right boundary pixels
-                relaxVertical(w, h, energyTo, prevWidthIndex);
+                relaxVertical(x, y, energyTo, prevColIndex);
             }
         }
 
         // Find the height index of the seam on bottom boundary
         double minSeamEnergy = Double.POSITIVE_INFINITY;
-        int widthIndex = 0;
-        for (int w = 1; w < width - 1; w++) {
-            if (energyTo[w][height - 1] < minSeamEnergy) {
-                minSeamEnergy = energyTo[w][height - 1];
-                widthIndex = w;
+        int colIndex = 0;
+        for (int x = 1; x < width - 1; x++) {
+            if (energyTo[x][height - 1] < minSeamEnergy) {
+                minSeamEnergy = energyTo[x][height - 1];
+                colIndex = x;
             }
         }
 
         // Find the height indexes along the seam from bottom to top
         int[] verticalSeam = new int[height];
-        for (int h = height -1; h >= 0; h--) {
-            verticalSeam[h] = widthIndex;
-            widthIndex = prevWidthIndex[widthIndex][h];
+        for (int y = height -1; y >= 0; y--) {
+            verticalSeam[y] = colIndex;
+            colIndex = prevColIndex[colIndex][y];
         }
         return verticalSeam;
     }
 
     // relax next possible pixel along the vertical seam (lower left /lower /lower right)
-    private void relaxVertical(int w, int h, double[][] energyTo, int[][] prevWidthIndex) {
+    private void relaxVertical(int x, int y, double[][] energyTo, int[][] prevColIndex) {
         for (int i = -1; i <= 1; i++) {
-            double energyToNextPixel = energyTo[w][h] + energy[w + i][h + 1];
-            if (energyTo[w + i][h + 1] > energyToNextPixel) {
-                energyTo[w + i][h + 1] = energyToNextPixel;
-                prevWidthIndex[w + i][h + 1] = w;
+            double energyToNextPixel = energyTo[x][y] + energy[x + i][y + 1];
+            if (energyTo[x + i][y + 1] > energyToNextPixel) {
+                energyTo[x + i][y + 1] = energyToNextPixel;
+                prevColIndex[x + i][y + 1] = x;
             }
         }
     }
@@ -191,17 +191,19 @@ public class SeamCarver {
     public void removeHorizontalSeam(int[] seam) {
         validSeam(seam, width, height);
         height--;
-        for (int w = 0; w < width; w++) {
-            for (int h = seam[w]; h < height; h++) {
-                picture.setRGB(w, h, picture.getRGB(w, h + 1));
-                energy[w][h] = energy[w][h + 1];
+        for (int x = 0; x < width; x++) {
+            for (int y = seam[x]; y < height; y++) {
+                picture.setRGB(x, y, picture.getRGB(x, y + 1));
+                energy[x][y] = energy[x][y + 1];
             }
-            // recalculate energy of pixels along the seam
-            if (seam[w] > 0) {
-                energy[w][seam[w] - 1] = energy(w, seam[w] - 1);
+        }
+        // recalculate energy of pixels along the seam
+        for (int x = 0; x < width; x++) {
+            if (seam[x] > 0) {
+                energy[x][seam[x] - 1] = energy(x, seam[x] - 1);
             }
-            if (seam[w] < height) {
-                energy[w][seam[w]] = energy(w, seam[w]);
+            if (seam[x] < height) {
+                energy[x][seam[x]] = energy(x, seam[x]);
             }
         }
     }
@@ -210,17 +212,19 @@ public class SeamCarver {
     public void removeVerticalSeam(int[] seam) {
         validSeam(seam, height, width);
         width--;
-        for (int h = 0; h < height; h++) {
-            for (int w = seam[h]; w < width; w++) {
-                picture.setRGB(w, h, picture.getRGB(w + 1, h));
-                energy[w][h] = energy[w + 1][h];
+        for (int y = 0; y < height; y++) {
+            for (int x = seam[y]; x < width; x++) {
+                picture.setRGB(x, y, picture.getRGB(x + 1, y));
+                energy[x][y] = energy[x + 1][y];
             }
-            // recalculate energy of pixels along the seam
-            if (seam[h] > 0) {
-                energy[seam[h] - 1][h] = energy(seam[h] - 1, h);
+        }
+        // recalculate energy of pixels along the seam
+        for (int y = 0; y < height; y++) {
+            if (seam[y] > 0) {
+                energy[seam[y] - 1][y] = energy(seam[y] - 1, y);
             }
-            if (seam[h] < width) {
-                energy[seam[h]][h] = energy(seam[h], h);
+            if (seam[y] < width) {
+                energy[seam[y]][y] = energy(seam[y], y);
             }
         }
     }
@@ -239,5 +243,6 @@ public class SeamCarver {
             }
         }
     }
+
 
 }
