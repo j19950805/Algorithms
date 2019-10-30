@@ -11,7 +11,7 @@ public class TwoSourceSynchronizeBFS {
     private HashMap<Integer, Character> marked; // value: 'v', 'w', 'b' (marked by both -> b)
 
     public TwoSourceSynchronizeBFS(Digraph G, Iterable<Integer> v, Iterable<Integer> w,
-                                   HashMap<IdPair, int[]> cache) {
+                                   HashMap<Integer, HashMap<Integer, int[]>> cache) {
         sca = -1;
         sapLength = Integer.MAX_VALUE;
         distToV = new HashMap<>();
@@ -26,9 +26,14 @@ public class TwoSourceSynchronizeBFS {
                     sapLength = 0;
                     return;
                 }
-                IdPair ids = new IdPair(i, j);
-                if (cache.containsKey(ids)) {
-                    int[] cacheInfo = cache.get(ids);
+                if (cache.containsKey(i) && cache.get(i).containsKey(j)) {
+                    int[] cacheInfo = cache.get(i).get(j);
+                    if (cacheInfo[0] < sapLength) {
+                        sapLength = cacheInfo[0];
+                        sca = cacheInfo[1];
+                    }
+                } else if (cache.containsKey(j) && cache.get(j).containsKey(i)) {
+                    int[] cacheInfo = cache.get(j).get(i);
                     if (cacheInfo[0] < sapLength) {
                         sapLength = cacheInfo[0];
                         sca = cacheInfo[1];

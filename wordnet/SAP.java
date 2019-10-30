@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class SAP {
     private final Digraph G;
-    private final HashMap<IdPair, int[]> sapCache;
+    private final HashMap<Integer, HashMap<Integer, int[]>> sapCache;
 
     // constructor takes a digraph (not necessarily a DAG)
     public SAP(Digraph G) {
@@ -23,12 +23,20 @@ public class SAP {
         if (v == w) {
             return 0;
         }
-        IdPair idp = new IdPair(v, w);
-        if (sapCache.containsKey(idp)) {
-            return sapCache.get(idp)[0];
+        if (sapCache.containsKey(v) && sapCache.get(v).containsKey(w)) {
+            return sapCache.get(v).get(w)[0];
+        }
+        if (sapCache.containsKey(w) && sapCache.get(w).containsKey(v)) {
+            return sapCache.get(w).get(v)[0];
         }
         TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w);
-        sapCache.put(idp, new int[]{bfs.getSapLength(), bfs.sca()});
+        if (sapCache.containsKey(v)) {
+            sapCache.get(v).put(w, new int[]{bfs.getSapLength(), bfs.sca()});
+        } else {
+            HashMap<Integer, int[]> vMap = new HashMap<>();
+            vMap.put(w, new int[]{bfs.getSapLength(), bfs.sca()});
+            sapCache.put(v, vMap);
+        }
         return bfs.getSapLength();
     }
 
@@ -39,12 +47,20 @@ public class SAP {
         if (v == w) {
             return v;
         }
-        IdPair idp = new IdPair(v, w);
-        if (sapCache.containsKey(idp)) {
-            return sapCache.get(idp)[1];
+        if (sapCache.containsKey(v) && sapCache.get(v).containsKey(w)) {
+            return sapCache.get(v).get(w)[1];
+        }
+        else if (sapCache.containsKey(w) && sapCache.get(w).containsKey(v)) {
+            return sapCache.get(w).get(v)[1];
         }
         TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w);
-        sapCache.put(idp, new int[]{bfs.getSapLength(), bfs.sca()});
+        if (sapCache.containsKey(v)) {
+            sapCache.get(v).put(w, new int[]{bfs.getSapLength(), bfs.sca()});
+        } else {
+            HashMap<Integer, int[]> vMap = new HashMap<>();
+            vMap.put(w, new int[]{bfs.getSapLength(), bfs.sca()});
+            sapCache.put(v, vMap);
+        }
         return bfs.sca();
     }
 
