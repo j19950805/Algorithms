@@ -1,19 +1,20 @@
-import edu.princeton.cs.algs4.FlowEdge;
-import edu.princeton.cs.algs4.FlowNetwork;
 import edu.princeton.cs.algs4.FordFulkerson;
+import edu.princeton.cs.algs4.FlowNetwork;
+import edu.princeton.cs.algs4.FlowEdge;
+import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.In;
 
 import java.util.HashMap;
-import java.util.Stack;
 
 
-class BaseballElimination {
-    private HashMap<String, Integer> teamId;
-    private int n;     // numberOfTeams
-    private int[] w;   // wins of team-i
-    private int[] l;   // loses of team-i
-    private int[] r;   // remaining games of team-i
-    private int[][] a; // number of r games between team-i and team-j
+public class BaseballElimination {
+    private final HashMap<String, Integer> teamId;
+    private final int n;     // numberOfTeams
+    private final int[] w;   // wins of i-team
+    private final int[] l;   // loses of i-team
+    private final int[] r;   // remaining games of i-team
+    private final int[][] a; // number of r games between i-team and j-team
+    private final HashMap<String, Stack<String>> certificateOfElimination; //cache
 
     // create a baseball division from given filename in format specified below
     public BaseballElimination(String filename) {
@@ -25,6 +26,7 @@ class BaseballElimination {
         l = new int[n];
         r = new int[n];
         a = new int[n][n];
+        certificateOfElimination = new HashMap<>();
 
         for (int i = 0; i < n; i++) {
             teamId.put(in.readString(), i);
@@ -74,60 +76,63 @@ class BaseballElimination {
 
     // is given team eliminated?
     public boolean isEliminated(String team) {
-        int id = teamId.get(team);
-        int maxWinOfTeam = w[id] + r[id];
-        int rTotal = 0;
-        for (int i = 0; i < n; i++) {
-            if (maxWinOfTeam < w[i]) {
-                return true;
-            }
-            // calculate total remaining games exclude target team
-            if (i != id) {
-                rTotal += r[i];
-            }
-        }
-        FordFulkerson ff = elimination(team);
-        return ff.value() == rTotal;
-    }
-
-
-    // subset R of teams that eliminates given team; null if not eliminated
-    public Iterable<String> certificateOfElimination(String team) {
-        FordFulkerson ff = elimination(team);
-        Stack<String> R = new Stack<>();
-        for (String otherTeam: teams()) {
-            if (ff.inCut(teamId.get(otherTeam))) {
-                R.push(otherTeam);
-            }
-        }
-        return R;
-    }
-
-    private FordFulkerson elimination(String team) {
         validTeam(team);
+        if (certificateOfElimination.containsKey(team)) {
+            return true;
+        }
         int id = teamId.get(team);
         int maxWinOfTeam = w[id] + r[id];
+        // number of teams + remaining game between teams exclude target team + virtual source & sink
         FlowNetwork G = new FlowNetwork(n * (n - 1) / 2 + 3);
-        int s = G.V() - 2;
-        int t = G.V() - 1;
-        int gameVertex = n;
+        int s = G.V() - 2;  // Artificial source
+        int t = G.V() - 1;  // Artificial sink
+        int gameVertex = n; // Index of games after team ids
+        int gameTotal = 0;  // total game between teams exclude target team
         for (int i = 0; i < n; i++) {
             if (i == id) {
-                break;
+                continue;
             }
             int threshold = maxWinOfTeam - w[i];
-            G.addEdge(new FlowEdge(i, t, Math.max(threshold, 0)));
+            if (threshold < 0) { // trivial elimination by i-team
+                G.addEdge(new FlowEdge(s, i, Double.POSITIVE_INFINITY));
+                gameTotal -= threshold;
+            } else {
+                G.addEdge(new FlowEdge(i, t, threshold));
+            }
             for (int j = 0; j < n; j++) {
                 if (j > i && j != id && a[i][j] > 0) {
                     G.addEdge(new FlowEdge(s, gameVertex, a[i][j]));
                     G.addEdge(new FlowEdge(gameVertex, i, Double.POSITIVE_INFINITY));
                     G.addEdge(new FlowEdge(gameVertex, j, Double.POSITIVE_INFINITY));
                     gameVertex++;
+                    gameTotal += a[i][j];
                 }
             }
         }
-        return new FordFulkerson(G, s, t);
+        FordFulkerson ff = new FordFulkerson(G, s, t);
+        if (ff.value() < gameTotal) {
+            Stack<String> certificate = new Stack<>();
+            for (String otherTeam: teams()) {
+                if (ff.inCut(teamId.get(otherTeam))) {
+                    certificate.push(otherTeam);
+                }
+            }
+            certificateOfElimination.put(team, certificate);
+            return true;
+        }
+        return false;
     }
+
+
+    // subset R of teams that eliminates given team; null if not eliminated
+    public Iterable<String> certificateOfElimination(String team) {
+        if (isEliminated(team)) {
+            return certificateOfElimination.get(team);
+        } else {
+            return null;
+        }
+    }
+
 
     private void validTeam(String team) {
         if (!teamId.containsKey(team)) {
@@ -136,17 +141,17 @@ class BaseballElimination {
     }
 
     public static void main(String[] args) {
-        BaseballElimination division = new BaseballElimination("teams12.txt");
+        BaseballElimination division = new BaseballElimination("teams4b.txt");
         for (String team : division.teams()) {
             if (division.isEliminated(team)) {
-                StdOut.print(team + " is eliminated by the subset R = { ");
+                System.out.print(team + " is eliminated by the subset R = { ");
                 for (String t : division.certificateOfElimination(team)) {
-                    StdOut.print(t + " ");
+                    System.out.print(t + " ");
                 }
-                StdOut.println("}");
+                System.out.println("}");
             }
             else {
-                StdOut.println(team + " is not eliminated");
+                System.out.println(team + " is not eliminated");
             }
         }
 
