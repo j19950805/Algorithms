@@ -21,24 +21,10 @@ public class TwoSourceSynchronizeBFS {
 
         for (int i: v) {
             for (int j: w) {
-                if (i == j) {
-                    sca = i;
-                    sapLength = 0;
+                if (sameSource(i, j)) {
                     return;
                 }
-                if (cache.containsKey(i) && cache.get(i).containsKey(j)) {
-                    int[] cacheInfo = cache.get(i).get(j);
-                    if (cacheInfo[0] < sapLength) {
-                        sapLength = cacheInfo[0];
-                        sca = cacheInfo[1];
-                    }
-                } else if (cache.containsKey(j) && cache.get(j).containsKey(i)) {
-                    int[] cacheInfo = cache.get(j).get(i);
-                    if (cacheInfo[0] < sapLength) {
-                        sapLength = cacheInfo[0];
-                        sca = cacheInfo[1];
-                    }
-                } else {
+                if (!cache(i, j, cache)) {
                     marked.put(i, 'v');
                     marked.put(j, 'w');
                     distToV.put(i, 0);
@@ -62,14 +48,17 @@ public class TwoSourceSynchronizeBFS {
         }
     }
 
-    public TwoSourceSynchronizeBFS(Digraph G, int v, int w) {
-        if (v == w) {
-            sca = v;
-            sapLength = 0;
+    public TwoSourceSynchronizeBFS(Digraph G, int v, int w,
+                                   HashMap<Integer, HashMap<Integer, int[]>> cache) {
+        if (sameSource(v, w)) {
             return;
         }
         sca = -1;
         sapLength = Integer.MAX_VALUE;
+        if (cache(v, w, cache)) {
+            return;
+        }
+
         distToV = new HashMap<>();
         distToW = new HashMap<>();
         marked = new HashMap<>();
@@ -152,6 +141,30 @@ public class TwoSourceSynchronizeBFS {
         }
     }
 
+    private boolean sameSource(int v, int w) {
+        if (v == w) {
+            sca = v;
+            sapLength = 0;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean cache(int v, int w, HashMap<Integer, HashMap<Integer, int[]>> cache) {
+        int[] cacheInfo;
+        if (cache.containsKey(v) && cache.get(v).containsKey(w)) {
+            cacheInfo = cache.get(v).get(w);
+        } else if (cache.containsKey(w) && cache.get(w).containsKey(v)) {
+            cacheInfo = cache.get(w).get(v);
+        } else {
+            return false;
+        }
+        if (cacheInfo[0] < sapLength) {
+            sapLength = cacheInfo[0];
+            sca = cacheInfo[1];
+        }
+        return true;
+    }
 
     public int sca() {
         return sca;

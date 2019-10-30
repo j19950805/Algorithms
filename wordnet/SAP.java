@@ -20,16 +20,7 @@ public class SAP {
     public int length(int v, int w) {
         validVertex(v);
         validVertex(w);
-        if (v == w) {
-            return 0;
-        }
-        if (sapCache.containsKey(v) && sapCache.get(v).containsKey(w)) {
-            return sapCache.get(v).get(w)[0];
-        }
-        if (sapCache.containsKey(w) && sapCache.get(w).containsKey(v)) {
-            return sapCache.get(w).get(v)[0];
-        }
-        TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w);
+        TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w, sapCache);
         if (sapCache.containsKey(v)) {
             sapCache.get(v).put(w, new int[]{bfs.getSapLength(), bfs.sca()});
         } else {
@@ -44,16 +35,7 @@ public class SAP {
     public int ancestor(int v, int w) {
         validVertex(v);
         validVertex(w);
-        if (v == w) {
-            return v;
-        }
-        if (sapCache.containsKey(v) && sapCache.get(v).containsKey(w)) {
-            return sapCache.get(v).get(w)[1];
-        }
-        else if (sapCache.containsKey(w) && sapCache.get(w).containsKey(v)) {
-            return sapCache.get(w).get(v)[1];
-        }
-        TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w);
+        TwoSourceSynchronizeBFS bfs = new TwoSourceSynchronizeBFS(G, v, w, sapCache);
         if (sapCache.containsKey(v)) {
             sapCache.get(v).put(w, new int[]{bfs.getSapLength(), bfs.sca()});
         } else {
@@ -80,6 +62,7 @@ public class SAP {
         return bfs.sca();
     }
 
+
     private void validVertex(int v) {
         if (v < 0 || v >= G.V()) {
             throw new IllegalArgumentException();
@@ -94,6 +77,7 @@ public class SAP {
             if (i == null) {
                 throw new IllegalArgumentException();
             }
+            validVertex(i);
         }
     }
 
@@ -102,11 +86,11 @@ public class SAP {
 
     // do unit testing of this class
     public static void main(String[] args) {
-        In in = new In("digraph9.txt");
+        In in = new In("digraph1.txt");
         Digraph G = new Digraph(in);
         SAP sap = new SAP(G);
-        int length   = sap.length(1, 5);
-        int ancestor = sap.ancestor(1, 5);
+        int length   = sap.length(2, 6);
+        int ancestor = sap.ancestor(2, 6);
         System.out.printf("length = %d, ancestor = %d\n", length, ancestor);
     }
 }

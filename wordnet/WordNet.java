@@ -110,7 +110,12 @@ public class WordNet {
         if (!isNoun(nounA) || !isNoun(nounB)) {
             throw new IllegalArgumentException("Argument is not a wordNet noun." + nounA + nounB);
         }
-        return sap.length(wordToId.get(nounA), wordToId.get(nounB));
+        List<Integer> a = wordToId.get(nounA);
+        List<Integer> b = wordToId.get(nounB);
+        if (a.size() == 1 && b.size() == 1) {
+            return sap.length(a.get(0), b.get(0));
+        }
+        return sap.length(a, b);
     }
 
     // a synset (second field of synsets.txt) that is the common ancestor of nounA and nounB
@@ -119,7 +124,14 @@ public class WordNet {
         if (!isNoun(nounA) && !isNoun(nounB)) {
             throw new IllegalArgumentException("Argument is not a WordNet noun." + nounA + nounB);
         }
-        int caId = sap.ancestor(wordToId.get(nounA), wordToId.get(nounB));
+        List<Integer> a = wordToId.get(nounA);
+        List<Integer> b = wordToId.get(nounB);
+        int caId = -1;
+        if (a.size() == 1 && b.size() == 1) {
+            caId = sap.ancestor(a.get(0), b.get(0));
+        } else {
+            caId = sap.ancestor(a, b);
+        }
         StringBuilder synset = new StringBuilder();
         for (String word: idToWord.get(caId)) {
             synset.append(" ").append(word);
@@ -128,4 +140,16 @@ public class WordNet {
         return synset.toString();
     }
 
+    public static void main(String[] args) {
+        WordNet wordnet = new WordNet("synsets.txt", "hypernyms.txt");
+        List<Integer> a = new LinkedList<>();
+        List<Integer> b = new LinkedList<>();
+        a.add(29104);
+        a.add(51703);
+        b.add(40858);
+        b.add(72642);
+        int length   = wordnet.sap.length(a, b);
+        int ancestor = wordnet.sap.ancestor(a, b);
+        System.out.printf("length = %d, ancestor = %d\n", length, ancestor);
+    }
 }
