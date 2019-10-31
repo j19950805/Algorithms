@@ -1,18 +1,21 @@
-
 import java.util.HashSet;
 import java.util.Set;
 
 public class BoggleSolver {
-    private final MyTrieSET dictionaryTrie;
-    private final int[][] ADJACENT = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+    private final int[][] adjacent = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+    private Node root;
+
+    private static class Node {
+        private boolean isKey = false;
+        private Node[] next = new Node[26];
+    }
 
     // Initializes the data structure using the given array of strings as the dictionary.
     // (You can assume each word in the dictionary contains only the uppercase letters A through Z.)
     public BoggleSolver(String[] dictionary) {
-        dictionaryTrie = new MyTrieSET();
         for (String word: dictionary) {
-            if (word.length() > 2 && word.length() <= 16) {
-                dictionaryTrie.add(word);
+            if (word.length() > 2) {
+                addWord(word);
             }
         }
     }
@@ -20,42 +23,21 @@ public class BoggleSolver {
     // Returns the set of all valid words in the given Boggle board, as an Iterable.
     public Iterable<String> getAllValidWords(BoggleBoard board) {
         Set<String> result = new HashSet<>();
-        int col = board.cols();
         int row = board.rows();
-        for (int x = 0; x < col; x++) {
-            for (int y = 0; y < row; y++) {
-                boolean [][] onStack = new boolean[col][row];
-                dfs(x, y, "", board, result, onStack);
+        int col = board.cols();
+        for (int x = 0; x < row; x++) {
+            for (int y = 0; y < col; y++) {
+                boolean [][] onStack = new boolean[row][col];
+                dfs(x, y, root, "", board, result, onStack);
             }
         }
         return result;
     }
 
-    private void dfs(int col, int row, String prefix, BoggleBoard board,
-                     Set<String> result, boolean[][] onStack) {
-        if (col < 0 || row < 0 || col >= board.cols() || row >= board.rows()
-            || onStack[col][row]) {
-            return;
-        }
-        prefix += board.getLetter(col, row);
-        boolean[] validPrefixOrWord = dictionaryTrie.validPrefixOrWord(prefix);
-        if (!validPrefixOrWord[0]) {
-            return;
-        }
-        if (validPrefixOrWord[1]) {
-            result.add(prefix);
-        }
-        onStack[col][row] = true;
-        for (int[] adj: ADJACENT) {
-            dfs(col + adj[0], col + adj[1], prefix, board, result, onStack);
-        }
-        onStack[col][row] = false;
-    }
-
     // Returns the score of the given word if it is in the dictionary, zero otherwise.
     // (You can assume the word contains only the uppercase letters A through Z.)
     public int scoreOf(String word) {
-        if (dictionaryTrie.contains(word)) {
+        if (containsWord(word)) {
             int length = word.length();
             if (length < 5) {
                 return 1;
@@ -72,17 +54,65 @@ public class BoggleSolver {
         return  0;
     }
 
-    public static void main(String[] args) {
-        In in = new In(args[0]);
-        String[] dictionary = in.readAllStrings();
-        BoggleSolver solver = new BoggleSolver(dictionary);
-        BoggleBoard board = new BoggleBoard(args[1]);
-        int score = 0;
-        for (String word : solver.getAllValidWords(board)) {
-            StdOut.println(word);
-            score += solver.scoreOf(word);
+    private void dfs(int row, int col, Node trieNode, String prefix,
+                     BoggleBoard board, Set<String> result, boolean[][] onStack) {
+        if (col < 0 || row < 0 || col >= board.cols() || row >= board.rows()
+            || onStack[row][col] || trieNode == null) {
+            return;
         }
-        StdOut.println("Score = " + score);
+        char c = board.getLetter(row, col);
+        prefix += c;
+        trieNode = trieNode.next[c - 'A'];
+        if (trieNode == null) {
+            return;
+        }
+        if (c == 'Q') {
+            prefix += 'U';
+            trieNode = trieNode.next['U' - 'A'];
+        }
+        if (trieNode == null) {
+            return;
+        }
+        if (trieNode.isKey) {
+            result.add(prefix);
+        }
+        onStack[row][col] = true;
+        for (int[] adj: adjacent) {
+            dfs(row + adj[0], col + adj[1], trieNode, prefix, board, result, onStack);
+        }
+        onStack[row][col] = false;
     }
 
+
+    private boolean containsWord(String word) {
+        Node x = get(root, word, 0);
+        return x != null && x.isKey;
+    }
+
+    private void addWord(String key) {
+        root = addWord(key, root, 0);
+    }
+
+    private Node addWord(String key, Node x, int d) {
+        if (x == null) {
+            x = new Node();
+        }
+        if (d == key.length()) {
+            x.isKey = true;
+            return x;
+        }
+        int c = key.charAt(d) - 'A';
+        x.next[c] = addWord(key, x.next[c], d + 1);
+        return x;
+    }
+
+    private Node get(Node x, String prefix, int d) {
+        if (x == null) {
+            return null;
+        }
+        if (d == prefix.length()) {
+            return x;
+        }
+        return get(x.next[prefix.charAt(d) - 'A'], prefix, d + 1);
+    }
 }
