@@ -1,3 +1,5 @@
+import edu.princeton.cs.algs4.In;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,10 +27,11 @@ public class BoggleSolver {
         Set<String> result = new HashSet<>();
         int row = board.rows();
         int col = board.cols();
+        StringBuilder prefix = new StringBuilder();
         for (int x = 0; x < row; x++) {
             for (int y = 0; y < col; y++) {
                 boolean [][] onStack = new boolean[row][col];
-                dfs(x, y, root, "", board, result, onStack);
+                dfs(x, y, root, prefix, board, result, onStack);
             }
         }
         return result;
@@ -54,33 +57,39 @@ public class BoggleSolver {
         return  0;
     }
 
-    private void dfs(int row, int col, Node trieNode, String prefix,
+    private void dfs(int row, int col, Node trieNode, StringBuilder prefix,
                      BoggleBoard board, Set<String> result, boolean[][] onStack) {
         if (col < 0 || row < 0 || col >= board.cols() || row >= board.rows()
-            || onStack[row][col] || trieNode == null) {
+            || onStack[row][col]) {
             return;
         }
         char c = board.getLetter(row, col);
-        prefix += c;
         trieNode = trieNode.next[c - 'A'];
         if (trieNode == null) {
             return;
         }
+        prefix.append(c);
         if (c == 'Q') {
-            prefix += 'U';
-            trieNode = trieNode.next['U' - 'A'];
-        }
-        if (trieNode == null) {
-            return;
+            prefix.append('U');
+            trieNode = trieNode.next[20]; // U - A = 20
+            if (trieNode == null) {
+                prefix.delete(prefix.length() - 2, prefix.length());
+                return;
+            }
         }
         if (trieNode.isKey) {
-            result.add(prefix);
+            result.add(prefix.toString());
         }
         onStack[row][col] = true;
         for (int[] adj: adjacent) {
             dfs(row + adj[0], col + adj[1], trieNode, prefix, board, result, onStack);
         }
         onStack[row][col] = false;
+        if (c == 'Q') {
+            prefix.delete(prefix.length() - 2, prefix.length());
+            return;
+        }
+        prefix.deleteCharAt(prefix.length() - 1);
     }
 
 
@@ -114,5 +123,18 @@ public class BoggleSolver {
             return x;
         }
         return get(x.next[prefix.charAt(d) - 'A'], prefix, d + 1);
+    }
+
+    public static void main(String[] args) {
+        In in = new In(args[0]);
+        String[] dictionary = in.readAllStrings();
+        BoggleSolver solver = new BoggleSolver(dictionary);
+        BoggleBoard board = new BoggleBoard(args[1]);
+        int score = 0;
+        for (String word : solver.getAllValidWords(board)) {
+            System.out.println(word);
+            score += solver.scoreOf(word);
+        }
+        System.out.println("Score = " + score);
     }
 }
