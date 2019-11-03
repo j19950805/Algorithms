@@ -1,22 +1,23 @@
 import edu.princeton.cs.algs4.BinaryStdIn;
 import edu.princeton.cs.algs4.BinaryStdOut;
-import edu.princeton.cs.algs4.Queue;
 
-import java.util.ArrayList;
 
 public class MoveToFront {
+    private static final int EXTENDED_ASCII = 256;
+
     // apply move-to-front encoding, reading from standard input and writing to standard output
     public static void encode() {
-        ArrayList<Character> ASCII = new ArrayList<>();
-        for (char i = 0; i < 256; i++) {
-            ASCII.add(i);
+        char[] ASCII = new char[EXTENDED_ASCII];
+        for (char i = 0; i < EXTENDED_ASCII; i++) {
+            ASCII[i] = i;
         }
         while (!BinaryStdIn.isEmpty()) {
             char c = BinaryStdIn.readChar();
-            for (char j = 0; j < 256; j++) {
-                if(c == ASCII.get(j)) {
-                    BinaryStdOut.write((char) j);
-                    ASCII.add(0, ASCII.remove(j));
+            for (char j = 0; j < EXTENDED_ASCII; j++) {
+                if (c == ASCII[j]) {
+                    BinaryStdOut.write(j);
+                    System.arraycopy(ASCII, 0, ASCII, 1, j);
+                    ASCII[0] = c;
                     break;
                 }
             }
@@ -26,14 +27,16 @@ public class MoveToFront {
 
     // apply move-to-front decoding, reading from standard input and writing to standard output
     public static void decode() {
-        ArrayList<Character> ASCII = new ArrayList<>();
-        for (char i = 0; i < 256; i++) {
-            ASCII.add(i);
+        char[] ASCII = new char[EXTENDED_ASCII];
+        for (char i = 0; i < EXTENDED_ASCII; i++) {
+            ASCII[i] = i;
         }
         while (!BinaryStdIn.isEmpty()) {
             char c = BinaryStdIn.readChar();
-            BinaryStdOut.write(ASCII.get(c));
-            ASCII.add(0, ASCII.remove(c));
+            char d = ASCII[c];  // decoded character
+            BinaryStdOut.write(d);
+            System.arraycopy(ASCII, 0, ASCII, 1, c);
+            ASCII[0] = d;
         }
         BinaryStdOut.close();
     }
@@ -47,7 +50,6 @@ public class MoveToFront {
         if (args[0].equals("+")) {
             decode();
         }
-
     }
 
 }

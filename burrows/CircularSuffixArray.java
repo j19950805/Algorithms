@@ -1,9 +1,8 @@
-import java.util.Arrays;
 
 public class CircularSuffixArray {
-    private int length;
-    private int[] index;
-    private String s;
+    private final int length;
+    private final int[] index;
+    private final String s;
 
     // circular suffix array of s
     public CircularSuffixArray(String s) {
@@ -17,7 +16,7 @@ public class CircularSuffixArray {
         for (int i = 0; i < length; i++) {
             suffixes[i] = new CircularSuffix(i);
         }
-        Arrays.sort(suffixes);
+        quick3Sort(suffixes, 0, length, 0);
         for (int i = 0; i < length; i++) {
             index[i] = suffixes[i].first;
         }
@@ -40,30 +39,80 @@ public class CircularSuffixArray {
         }
     }
 
-    private class CircularSuffix implements Comparable<CircularSuffix>{
+    private void quick3Sort(CircularSuffix[] a, int lo, int hi, int d) {
+
+        if (d >= length) {
+            return;
+        }
+
+        // cutoff to insertion sort for small subarrays (size <= 15)
+        int cutoff = 16;
+        if (hi <= lo + cutoff) {
+            insertionSort(a, lo, hi, d);
+            return;
+        }
+
+        int lt = lo, gt = hi;
+        int v = s.charAt((a[lo].first + d) % length);
+        int i = lo + 1;
+        while (i < gt) {
+            int t = s.charAt((a[i].first + d) % length);
+            if (t < v) {
+                exch(a, lt, i);
+                lt++;
+                i++;
+            }
+            else if (t > v) {
+                exch(a, i, gt - 1);
+                gt--;
+            } else {
+                i++;
+            }
+        }
+
+        quick3Sort(a, lo, lt, d);
+        quick3Sort(a, lt, gt, d + 1);
+        quick3Sort(a, gt, hi, d);
+    }
+
+    private void exch(CircularSuffix[] a, int i, int j) {
+        int temp = a[i].first;
+        a[i].first = a[j].first;
+        a[j].first = temp;
+    }
+
+
+    private void insertionSort(CircularSuffix[] a, int lo, int hi, int d) {
+        for (int i = lo; i < hi; i++) {
+            for (int j = i; j > lo && less(a[j].first, a[j - 1].first, d); j--) {
+                exch(a, j, j - 1);
+            }
+        }
+    }
+
+    private boolean less(int first1, int first2, int d) {
+        for (int i = d; i < length; i++) {
+            char a = s.charAt((first1 + i) % length);
+            char b = s.charAt((first2 + i) % length);
+            if (a < b) return true;
+            if (a > b) return false;
+        }
+        return false;
+    }
+
+    private class CircularSuffix {
         private int first;
 
         private CircularSuffix(int first) {
             this.first = first;
         }
 
-        @Override
-        public int compareTo(CircularSuffix o) {
-            for (int i = 0; i < length; i++) {
-                char c = s.charAt((first + i) % length);
-                char other = s.charAt((o.first + i) % length);
-                if (c != other) {
-                    return c - other;
-                }
-            }
-            return 0;
-        }
     }
 
 
     // unit testing (required)
     public static void main(String[] args) {
-        CircularSuffixArray c = new CircularSuffixArray("banana");
+        CircularSuffixArray c = new CircularSuffixArray("bananaajighqhvihsjoihasjsh;");
         for (int i = 0; i < c.length(); i++) {
             System.out.println(c.index(i));
         }

@@ -2,7 +2,11 @@ import edu.princeton.cs.algs4.BinaryStdIn;
 import edu.princeton.cs.algs4.BinaryStdOut;
 import edu.princeton.cs.algs4.Queue;
 
+import java.util.ArrayList;
+
 public class BurrowsWheeler {
+    private static final int EXTENDED_ASCII = 256;
+
     // apply Burrows-Wheeler transform,
     // reading from standard input and writing to standard output
     public static void transform() {
@@ -27,25 +31,23 @@ public class BurrowsWheeler {
         int first = BinaryStdIn.readInt();
         String s = BinaryStdIn.readString();
         int[] next = new int[s.length()];
-        Queue<Integer>[] count =  new Queue[256];
+        ArrayList<Queue<Integer>> count = new ArrayList<>();
+        for (int i = 0; i < EXTENDED_ASCII; i++) {
+            count.add(new Queue<>());
+        }
         for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (count[c] == null) {
-                count[c] = new Queue<>();
-            }
-            count[c].enqueue(i);
+            count.get(s.charAt(i)).enqueue(i);
         }
         int nextIndex = 0;
-        for (int i = 0; i < 255; i++) {
-            while (count[i] != null && !count[i].isEmpty()) {
-                next[nextIndex] = count[i].dequeue();
+        for (int i = 0; i < EXTENDED_ASCII; i++) {
+            while (!count.get(i).isEmpty()) {
+                next[nextIndex] = count.get(i).dequeue();
                 nextIndex++;
             }
         }
-        for (int i = next[first]; i != first ; i = next[i]){
-            BinaryStdOut.write(s.charAt(i));
+        for (int i = 0, j = next[first]; i < s.length(); i++, j = next[j]) {
+            BinaryStdOut.write(s.charAt(j));
         }
-        BinaryStdOut.write(s.charAt(first));
         BinaryStdOut.close();
     }
 
