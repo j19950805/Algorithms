@@ -31,18 +31,18 @@ public class BurrowsWheeler {
         int first = BinaryStdIn.readInt();
         String s = BinaryStdIn.readString();
         int[] next = new int[s.length()];
-        ArrayList<Queue<Integer>> count = new ArrayList<>();
+        ArrayList<Queue<Integer>> count = new ArrayList<>(EXTENDED_ASCII);
         for (int i = 0; i < EXTENDED_ASCII; i++) {
             count.add(new Queue<>());
         }
         for (int i = 0; i < s.length(); i++) {
             count.get(s.charAt(i)).enqueue(i);
         }
-        int nextIndex = 0;
-        for (int i = 0; i < EXTENDED_ASCII; i++) {
-            while (!count.get(i).isEmpty()) {
-                next[nextIndex] = count.get(i).dequeue();
-                nextIndex++;
+        for (int i = 0, index = 0; i < EXTENDED_ASCII; i++) {
+            Queue<Integer> q = count.get(i);
+            while (!q.isEmpty()) {
+                next[index] = q.dequeue();
+                index++;
             }
         }
         for (int i = 0, j = next[first]; i < s.length(); i++, j = next[j]) {
